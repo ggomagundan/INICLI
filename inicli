@@ -47,7 +47,7 @@ exit(0);
 
 // Command-line INIpay
 class INIFactory {
-    public static $INIPAY_ROOT = '/home/ts/www/INIpay50';
+    public static $INIPAY_ROOT = 'WORK_DIR';
     public static $DEBUG       = 'true';
     public static $ADMIN       = '1111';
     public static $MID         = 'INIpayTest';
@@ -100,15 +100,21 @@ class INIFactory {
             'TID',       // 거래번호
 
             // 신용카드 결제 결과 데이터
-            'ApplDate',      // 이니시스 승인날짜
-            'ApplTime',      // 이니시스 승인시각
-            'ApplNum',       // 신용카드 승인번호
-            'CARD_Quota',    // 할부기간
-            'CARD_Interest', // 무이자할부 여부: 1이면 무이자 할부
-            'CARD_Code',     // 신용카드사 코드
-            'CARD_BankCode', // 카드발급사 코드
-            'CARD_AuthType', // 본인인증 수행 여부: 00이면 수행
-            'EventCode',     // 각종 이벤트 적용 여부
+            'ApplDate',           // 이니시스 승인날짜
+            'ApplTime',           // 이니시스 승인시각
+            'ApplNum',            // 신용카드 승인번호
+            'CARD_Quota',         // 할부기간
+            'CARD_Interest',      // 무이자할부 여부: 1이면 무이자 할부
+            'CARD_Code',          // 신용카드사 코드
+            'CARD_BankCode',      // 카드발급사 코드
+            'CARD_AuthType',      // 본인인증 수행 여부: 00이면 수행
+            'EventCode',          // 각종 이벤트 적용 여부
+            'VACT_Num',           // 입금 계좌
+            'VACT_BankCode',      // 입금은행코드
+            'VACT_Name',          // 입금자명
+            'VACT_Date',          // 송금일자
+            'VACT_InputName',     // 송금자명
+            'VACT_Time'           // 송금시각
         );
         $inipay = self::get_instance();
         $inipay->SetField('type',    'securepay');
