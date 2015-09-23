@@ -22,7 +22,11 @@ INICLI now supports credit card only.
 
 ## Usage
 
-    $ `which php` /path/to/inicli --command=[chkfake|securepay|cancel] --mid=[your mid] --admin=[your key password] --params='[parameters in JSON format]'
+    $ `which php` /path/to/inicli --command=[prepare|chkfake|securepay|cancel] --mid=[your mid] --admin=[your key password] --params='[parameters in JSON format]'
+
+    $ `which php` /path/to/inicli --command=prepare --mid=[your mid] --admin=[your key password] --params='"price": "1000", "orderNumber": "#{ORDER_NUMBER}"' // prepare command Sample
+
+    
     
 To avoid copyright issues INICLI doesn't include INIpay50. You first have to copy INIpay50 under `vendor` directory as it is so you can find INILib.php under `vendor/INIpay50/libs`. Otherwise you need to modify source code to set `INIFactory::$INIPAY_ROOT` on your own.
 
