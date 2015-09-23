@@ -26,17 +26,18 @@ $opts = getopt(
     array('mid:', 'admin:', 'params:', 'command:')
 );
 
-$commands = array('chkfake', 'securepay', 'cancel');
+$commands = array('prepare', 'chkfake', 'securepay', 'cancel');
 if (false == in_array($opts['command'], $commands)) {
     echo "Invalid command given: {$opts['command']}\n";
     exit(1);
 }
 
-INIFactory::$INIPAY_ROOT = dirname(__FILE__) . '/../vendor/INIpay50/';
+//INIFactory::$INIPAY_ROOT = dirname(__FILE__) . '/INIpay50';
 INIFactory::$ADMIN       = $opts['admin'];
 INIFactory::$MID         = $opts['mid'];
 ob_start();
 require_once INIFactory::$INIPAY_ROOT.'/libs/INILib.php';
+
 
 $params = (array) json_decode($opts['params']);
 $result = call_user_func_array( array('INIFactory', $opts['command']), array($params) );
@@ -52,6 +53,7 @@ class INIFactory {
     public static $ADMIN       = '1111';
     public static $MID         = 'INIpayTest';
     public static $PGID        = '';
+    
 
     static public function chkfake($params = array()) {
         $params_keys = array('price', 'quotabase');
@@ -71,6 +73,59 @@ class INIFactory {
 
         return json_encode($result);
     }
+    
+    
+      static public function prepare($params = array()) {
+      	$params_keys = array('orderNumber', 'price');
+      	 $result_keys = array('oid', 'mKey', 'sign', 'timestamp');
+      	
+      	
+
+$result = $params;
+$orderNumber = $params["orderNumber"];
+$price = $params["price"];
+
+    	$timestamp = self::getTimestamp();   // util에 의해서 자동생성
+    	$cardNoInterestQuota = "11-2:3:,34-5:12,14-6:12:24,12-12:36,06-9:12,01-3:4";  // 카드 무이자 여부 설정(가맹점에서 직접 설정)
+		$cardQuotaBase = "2:3:4:5:6:11:12:24:36";  // 가맹점에서 사용할 할부 개월수 설정
+		 $signKey = "SU5JTElURV9UUklQTEVERVNfS0VZU1RS"; // 가맹점에 제공된 웹 표준 사인키(가맹점 수정후 고정)
+		$mKey = self::makeHash($signKey, "sha256");
+		
+		
+  
+
+	
+
+		$params = array(
+    		"oid" => $orderNumber,
+    		"price" => $price,
+    	 	"timestamp" => $timestamp
+		);
+		$sign = self::makeSignature($params, "sha256");
+		
+
+//        $inipay["inipayhome"] = self::$INIPAY_ROOT;
+//       $inipay["debug"] = self::$DEBUG;
+//     $inipay["admin"] = self::$ADMIN;
+//   $inipay["mid"] = self::$MID;
+
+
+
+$result["oid"] = $orderNumber;
+$result["timestamp"] = $timestamp;
+$result["mKey"] = $mKey;
+$result["sign"] = $sign;
+$result["cardNoInterestQuota"] = $cardNoInterestQuota;
+$result["cardQuotaBase"] = $cardQuotaBase;
+
+
+
+
+        return json_encode($result);
+
+
+        
+    }
 
     static public function securepay($params = array()) {
         $params_keys = array(
@@ -87,6 +142,9 @@ class INIFactory {
             'sessionkey',
             'enctype',
             'rn',
+            
+            'oid',
+
 
             'uid',
             'url',
@@ -212,4 +270,65 @@ class INIFactory {
         }
         return $pgid;
     }
+
+
+    	static private function getTimestamp()	{
+			// timezone 을 설정하지 않으면 getTimestapme() 실행시 오류가 발생한다.
+			// php.ini 에 timezone 설정이 되어 잇으면 아래 코드가 필요없다. 
+			// php 5.3 이후로는 반드시 timezone 설정을 해야하기 때문에 아래 코드가 필요없을 수 있음. 나중에 확인 후 수정필요.
+			// 이니시스 플로우에서 timestamp 값이 중요하게 사용되는 것으로 보이기 때문에 정확한 timezone 설정후 timestamp 값이 필요하지 않을까 함.
+			date_default_timezone_set('Asia/Seoul');
+			$date = new DateTime();
+			
+			$milliseconds = round(microtime(true) * 1000);	
+			$tempValue1 = round($milliseconds/1000);		//max integer 자릿수가 9이므로 뒤 3자리를 뺀다
+			$tempValue2 = round(microtime(false) * 1000);	//뒤 3자리를 저장
+			switch (strlen($tempValue2)) {
+				case '3':
+					break;
+				case '2':
+					$tempValue2 = "0".$tempValue2;
+					break;
+				case '1':
+					$tempValue2 = "00".$tempValue2;
+					break;
+				default:
+					$tempValue2 = "000";
+					break;
+			}
+			
+			return "".$tempValue1.$tempValue2;
+		}
+	
+		/*
+		 //*** 위변조 방지체크를 signature 생성 ***
+		
+		 mid, price, timestamp 3개의 키와 값을	
+		 key=value 형식으로 하여 '&'로 연결한 하여 SHA-256 Hash로 생성 된값	
+		 ex) mid=INIpayTest&price=819000&timestamp=2012-02-01 09:19:04.004
+		
+		 * key기준 알파벳 정렬
+		 * timestamp는 반드시 signature생성에 사용한 timestamp 값을 timestamp input에 그데로 사용하여야함
+		 */	
+		static private function makeSignature($signParam) {
+			ksort($signParam);
+			$string = "";
+			foreach ($signParam as $key => $value) {
+				$string .= "&$key=$value";
+			}		
+			$string = substr($string, 1); // remove leading "&"
+			
+			$sign = self::makeHash($string, "sha256");
+					
+			return $sign;
+		}
+		
+		static private function makeHash($data, $alg) {
+			// $s = hash_hmac('sha256', $data, 'secret', true);
+			// return base64_encode($s);
+			
+			$ret = openssl_digest($data, $alg);
+			return $ret;
+		}
 }
+
